@@ -1,0 +1,94 @@
+# kb-deploy — 个人知识库部署配置
+
+`kb.cqian.top` 的服务器端配置：Halo（内容 / 用户 / 会员）+ PostgreSQL + Caddy（自动 HTTPS、域名分流）。
+这个仓库只放**配置**，不放内容和运行数据；内容在 Halo 后台管理，数据在服务器的 `data/` 目录。
+
+## 架构
+
+```
+浏览器 ──HTTPS──> Caddy
+                   ├── kb.cqian.top            -> 知识库（正式地址，canonical）
+                   │     ├── /life/how-to-live-better/   静态 HTML 资料
+                   │     ├── /files/*                    static/ 下任意目录
+                   │     └── 其他                        -> Halo :8090
+                   ├── cqian.top / www          -> 301 跳转到 kb（以后可换成新业务）
+                   ├── *.cqian.top（HTTP）       -> 301 跳转到 kb
+                   └── http://<公网IP>           -> 知识库（备案期间 / 调试用）
+Halo ──> PostgreSQL
+```
+
+服务器上的目录结构：
+
+```
+/opt/kb-deploy/
+├── Caddyfile            路由与域名规划（本仓库）
+├── docker-compose.yml   三个容器的定义（本仓库）
+├── setup.sh             裸机初始化脚本（本仓库）
+├── scripts/deploy.sh    本地 -> 服务器 同步配置（本仓库）
+├── static/              静态资料（本仓库）
+├── .env                 域名 / IP / 数据库密码（setup.sh 生成，不进仓库）
+└── data/                Halo 附件、数据库、证书（运行数据，不进仓库）
+```
+
+备份 = 打包服务器上整个 `/opt/kb-deploy`；迁移 = 拷到新机器后 `docker compose up -d`。
+
+## 首次部署
+
+1. 服务器：Ubuntu 24.04，安全组放行 TCP 22 / 80 / 443。
+2. 域名解析，四条 A 记录指向服务器公网 IP：`kb`、`@`、`www`、`*`。
+3. 上传并执行：
+
+```bash
+scp -r kb-deploy root@<服务器IP>:/opt/
+ssh root@<服务器IP>
+cd /opt/kb-deploy && bash setup.sh cqian.top     # 第二个参数可显式传公网 IP
+```
+
+脚本做的事：加 2G swap → 装 Docker（阿里云源 + 镜像加速）→ 生成 `.env` → `docker compose up -d`。
+之后打开 `https://kb.cqian.top/console` 创建管理员。
+
+## 日常改配置
+
+本地改完 `Caddyfile` / `docker-compose.yml` / `static/`，一条命令同步并生效：
+
+```bash
+scripts/deploy.sh root@<服务器IP>
+```
+
+（rsync 配置到 `/opt/kb-deploy`，排除 `.env` 和 `data/`，然后重启 Caddy。）
+
+## 内容怎么管
+
+- **文章、图片、PDF**：全部在 Halo 后台操作，不碰服务器。需要访问控制（游客 / VIP）的内容必须是 Halo 文章，附件和静态文件是公开直链，会员插件管不到。
+- **整本书 / 结构化资料**：转成带 frontmatter 的 Markdown，用 Halo 应用市场的「站点迁移」插件（来源选 Markdown）批量导入，每章一篇文章。
+- **别人做好的整站 HTML**（少数例外）：放到 `static/<分类>/<名字>/`，通过 `/files/<分类>/<名字>/` 访问，无需改配置。
+
+## 备案期间
+
+国内服务器绑定域名需要 ICP 备案，审核期间用 IP 直连：`http://<公网IP>/`（Halo 后台 `http://<公网IP>/console`）。
+备案通过后域名自动可用，`Caddyfile` 末尾的 IP 段可以删掉。
+
+## 以后主域名要上新业务
+
+只改 `Caddyfile` 里「主域名 / www」那一段：把 `redir` 换成新业务的 `reverse_proxy`，`scripts/deploy.sh` 同步即可。
+知识库的配置、数据、用户手里的 `kb.` 链接全部不受影响。
+
+## 开发路线（Halo 做底座，只开发差异部分）
+
+1. **主题** `kb-theme`：分类树侧栏、条目折叠、成本标签 / 证据等级色块、VIP 内容锁标识。Fork 现有主题改起。
+2. **结构化条目插件** `kb-plugin-*`：把「建议条目」做成自定义模型（成本 / 收益 / 证据等级 / 标签），可筛选、可收藏。
+3. **配套服务**：微信登录、知识星球打通、周报推送等，独立容器挂在 Caddy 后面。
+
+主题和插件各自独立仓库，构建产物通过 `scripts/deploy.sh` 或 Actions 推到服务器。
+
+## 常用命令（服务器上）
+
+```bash
+cd /opt/kb-deploy
+docker compose ps                              # 状态
+docker compose logs -f halo                    # Halo 日志
+docker compose logs --since 10m caddy          # Caddy 日志
+docker compose pull && docker compose up -d    # 升级
+ls data/caddy/caddy/certificates/*/            # 已签发的证书
+tar czf ~/kb-backup-$(date +%F).tgz -C /opt kb-deploy   # 备份
+```

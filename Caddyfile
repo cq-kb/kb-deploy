@@ -1,0 +1,54 @@
+# ============================================================
+# 域名规划：
+#   kb.{域名}      正式地址（canonical），知识库在这里提供服务
+#   {域名} / www   现在只做跳转；以后上新业务时改这一段即可，知识库不受影响
+#   *.{域名}       泛解析兜底，HTTP 层跳转到 kb（不签证书）
+# SITE_DOMAIN = 主域名，例如 cqian.top；SERVER_IP = 公网 IP（备案期间 / 调试用 IP 直连）
+# 两者都来自 .env（setup.sh 自动生成）
+# ============================================================
+
+# 知识库的路由规则，域名站点和 IP 站点共用
+(kb_routes) {
+	encode zstd gzip
+
+	# 静态资料区：每份独立的 HTML/PDF 资料放到 static/ 下对应目录
+	# static/life/how-to-live-better/index.html -> /life/how-to-live-better/
+	handle_path /life/how-to-live-better* {
+		root * /srv/static/life/how-to-live-better
+		file_server
+	}
+
+	# 通用静态区：static/ 下任意目录自动可访问，不用再加规则
+	# static/tech/xxx/index.html -> /files/tech/xxx/
+	handle_path /files/* {
+		root * /srv/static
+		file_server
+	}
+
+	# 其余全部交给 Halo（文章、用户、会员、后台 /console）
+	handle {
+		reverse_proxy halo:8090
+	}
+}
+
+# ---- 正式地址：知识库 ----
+kb.{$SITE_DOMAIN} {
+	import kb_routes
+}
+
+# ---- 主域名 / www：目前跳转到知识库 ----
+# 以后主域名要上新业务，把下面这块换成新业务的 reverse_proxy 即可
+{$SITE_DOMAIN}, www.{$SITE_DOMAIN} {
+	redir https://kb.{$SITE_DOMAIN}{uri} permanent
+}
+
+# ---- 其他任意子域名：HTTP 层兜底跳转（不签证书）----
+http://*.{$SITE_DOMAIN} {
+	redir https://kb.{$SITE_DOMAIN}{uri} permanent
+}
+
+# ---- 纯 IP 访问（备案审核期间 / 调试用，只走 HTTP，无证书）----
+# 备案通过、域名可用后可整段删除
+http://{$SERVER_IP} {
+	import kb_routes
+}
