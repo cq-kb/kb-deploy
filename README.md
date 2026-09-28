@@ -47,7 +47,32 @@ cd /opt/kb-deploy && bash setup.sh cqian.top     # 第二个参数可显式传�
 脚本做的事：加 2G swap → 装 Docker（阿里云源 + 镜像加速）→ 生成 `.env` → `docker compose up -d`。
 之后打开 `https://kb.cqian.top/console` 创建管理员。
 
-## 日常改配置
+## 自动部署（push 即上线）
+
+两个仓库都配了 GitHub Actions（`.github/workflows/deploy.yml`）：推送到 `main` 后，Actions 通过 SSH
+把文件 rsync 到服务器并让改动生效。服务器不需要能访问 GitHub，构建也在 Actions 上完成。
+
+一次性准备（在服务器上生成一对专用密钥）：
+
+```bash
+ssh root@<服务器IP>
+ssh-keygen -t ed25519 -N "" -C "github-actions-deploy" -f /root/.ssh/github_deploy
+cat /root/.ssh/github_deploy.pub >> /root/.ssh/authorized_keys
+cat /root/.ssh/github_deploy          # 私钥，整段复制
+```
+
+然后在 GitHub 上 **kb-deploy 和 kb-theme 两个仓库**各自的 Settings → Secrets and variables → Actions 里添加：
+
+| Secret | 值 |
+|---|---|
+| `DEPLOY_HOST` | 服务器公网 IP |
+| `DEPLOY_USER` | `root` |
+| `DEPLOY_KEY`  | 上面 `cat` 出来的私钥全文（含 BEGIN/END 行） |
+
+之后：改 `kb-deploy` 推送 → 配置同步 + Caddy 重启；改 `kb-theme` 推送 → 测试、构建、主题同步、Halo 重启。
+在仓库的 Actions 页面能看到每次部署的日志。手动触发用 Actions 页面的 "Run workflow"。
+
+## 日常改配置（手动方式，备用）
 
 本地改完 `Caddyfile` / `docker-compose.yml` / `static/`，一条命令同步并生效：
 

@@ -1,0 +1,48 @@
+# push 到 main 后，把配置同步到服务器并让改动生效。
+# 需要在仓库 Settings → Secrets and variables → Actions 里配置：
+#   DEPLOY_HOST  服务器公网 IP（47.107.190.39）
+#   DEPLOY_USER  SSH 用户（root）
+#   DEPLOY_KEY   SSH 私钥（见 README「自动部署」）
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "dev/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync config to server
+        run: |
+          rsync -avz --delete \
+            --exclude '.env' --exclude 'data/' --exclude '.git/' --exclude '.github/' \
+            --exclude 'dev/' --exclude 'README.md' \
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/kb-deploy/"
+
+      - name: Apply
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" '
+            set -e
+            cd /opt/kb-deploy
+            docker compose up -d --remove-orphans
+            docker compose restart caddy
+            docker compose ps
+          '
