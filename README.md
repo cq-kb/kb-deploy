@@ -81,6 +81,17 @@ scripts/deploy.sh root@<服务器IP>
 
 主题和插件各自独立仓库，构建产物通过 `scripts/deploy.sh` 或 Actions 推到服务器。
 
+## 本地开发环境（主题 / 插件调试）
+
+```bash
+git clone https://github.com/Cq-study/kb-theme.git ~/Personal/kb-theme   # 主题仓库，与本仓库平级
+cd ~/Personal/kb-deploy/dev && docker compose up -d                      # 本地 Halo，http://localhost:8090
+cd ~/Personal/kb-theme && pnpm install && pnpm dev                       # 监听构建主题
+```
+
+本地 Halo 用内置 H2 数据库，数据在 `dev/data/`（已 gitignore），与线上完全隔离。
+后台 → 主题 → 启用「KB（知识库）」，改 `kb-theme/src` 后刷新即可看到效果。
+
 ## 常用命令（服务器上）
 
 ```bash
