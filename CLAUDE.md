@@ -74,7 +74,8 @@ GitHub 组织 `cq-kb`（免费版）：两个仓库都是 **公开** 的，因�
 - [ ] 在 Halo 后台启用「KB（知识库）」主题
 - [x] 导入 `kb-content/how-to-live-better/` 39 篇文章（站点迁移插件 → Markdown）
 - [ ] ~~装会员插件，建 VIP 等级~~ 暂缓（先做流量）
-- [ ] 访问统计（Umami）+ 站点地图/SEO 插件，能看到流量从哪来
+- [x] Umami 已进 compose（`stats.cqian.top`）。**待人工**：首次登录改密码 → 添加网站 kb.cqian.top → 把跟踪脚本贴到 Halo 后台「设置 → 代码注入 → 头部」
+- [ ] 站点地图插件（应用市场搜「站点地图」，免费）→ 提交到百度站长 / Bing / Google
 - [x] 备案通过，Caddyfile 的 IP 段已删
 - [ ] 后台 → 主题 → KB 设置 → 备案，填 ICP 号 `鄂ICP备2026055268号-1`（主题页脚会显示并链到 beian.miit.gov.cn）
 - [ ] 删 `static/` 的 how-to-live-better（内容已是文章，确认无外链依赖后删）

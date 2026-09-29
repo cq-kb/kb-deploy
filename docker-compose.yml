@@ -55,6 +55,24 @@ services:
       - ./data/caddy:/data
       - ../exam-calendar/public:/srv/kao:ro
 
+  # 访问统计（Umami，自托管）：https://stats.<域名>
+  # 复用 halodb，库名 umami（scripts/ensure-umami-db.sh 会在部署时自动创建）
+  umami:
+    image: umamisoftware/umami:3.4.0
+    container_name: umami
+    restart: unless-stopped
+    depends_on:
+      halodb:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://halo:${DB_PASSWORD}@halodb:5432/umami
+      - APP_SECRET=${UMAMI_APP_SECRET}
+      - DISABLE_TELEMETRY=1
+      # 统计脚本改名为 /kb.js、上报接口改为 /api/kb，减少被广告拦截插件拦掉的概率
+      - TRACKER_SCRIPT_NAME=kb
+      - COLLECT_API_ENDPOINT=/api/kb
+    mem_limit: 350m
+
   # 考试日历（代码在 /opt/exam-calendar，见 ~/Personal/exam-calendar）
   exam-calendar:
     build: ../exam-calendar

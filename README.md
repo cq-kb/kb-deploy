@@ -11,6 +11,7 @@
                    │     ├── /life/how-to-live-better/   静态 HTML 资料
                    │     ├── /files/*                    static/ 下任意目录
                    │     └── 其他                        -> Halo :8090
+                   ├── stats.cqian.top          -> Umami 访问统计
                    ├── cqian.top / www          -> 301 跳转到 kb（以后可换成新业务）
                    └── *.cqian.top（HTTP）       -> 301 跳转到 kb
 Halo ──> PostgreSQL
@@ -91,6 +92,12 @@ scripts/deploy.sh root@<服务器IP>
 
 国内服务器绑定域名需要 ICP 备案，`cqian.top` 已备案（鄂ICP备2026055268号-1）。审核期间若需要 IP 直连，
 在 `Caddyfile` 末尾临时加一段 `http://{$SERVER_IP} { import kb_routes }` 即可，通过后删掉。
+
+## 访问统计（Umami）
+
+`stats.<域名>` 是自托管的 Umami，数据存在 halodb 的 `umami` 库里，部署时 `scripts/ensure-umami-db.sh` 会自动建库并生成 `UMAMI_APP_SECRET`。
+首次使用：登录 `admin` / `umami` → 立即改密码 → 「网站」添加 `kb.<域名>` → 复制跟踪代码，贴到 Halo 后台「设置 → 代码注入 → 头部」。
+脚本地址是 `/kb.js`、上报接口 `/api/kb`（改过名，减少被广告拦截）。
 
 ## 以后主域名要上新业务
 

@@ -56,6 +56,12 @@ kao.{$SITE_DOMAIN} {
 	header Cache-Control "public, max-age=600"
 }
 
+# ---- 访问统计：stats.{域名}（Umami 后台 + 统计脚本）----
+stats.{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy umami:3000
+}
+
 # ---- 其他任意子域名：HTTP 层兜底跳转（不签证书）----
 http://*.{$SITE_DOMAIN} {
 	redir https://kb.{$SITE_DOMAIN}{uri} permanent

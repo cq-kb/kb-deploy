@@ -53,6 +53,7 @@ if [[ ! -f .env ]]; then
 SITE_DOMAIN=${SITE_DOMAIN}
 SERVER_IP=${SERVER_IP}
 DB_PASSWORD=${DB_PASSWORD}
+UMAMI_APP_SECRET=$(openssl rand -hex 32)
 EOF
   chmod 600 .env
 elif ! grep -q '^SERVER_IP=' .env; then
@@ -63,6 +64,8 @@ mkdir -p data/halo2 data/db data/caddy static
 
 echo "==> [5/5] 启动服务"
 docker compose pull
+docker compose up -d halodb
+bash scripts/ensure-umami-db.sh
 docker compose up -d
 
 echo
