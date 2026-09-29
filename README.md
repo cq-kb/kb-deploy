@@ -12,8 +12,7 @@
                    │     ├── /files/*                    static/ 下任意目录
                    │     └── 其他                        -> Halo :8090
                    ├── cqian.top / www          -> 301 跳转到 kb（以后可换成新业务）
-                   ├── *.cqian.top（HTTP）       -> 301 跳转到 kb
-                   └── http://<公网IP>           -> 知识库（备案期间 / 调试用）
+                   └── *.cqian.top（HTTP）       -> 301 跳转到 kb
 Halo ──> PostgreSQL
 ```
 
@@ -88,10 +87,10 @@ scripts/deploy.sh root@<服务器IP>
 - **整本书 / 结构化资料**：转成带 frontmatter 的 Markdown，用 Halo 应用市场的「站点迁移」插件（来源选 Markdown）批量导入，每章一篇文章。
 - **别人做好的整站 HTML**（少数例外）：放到 `static/<分类>/<名字>/`，通过 `/files/<分类>/<名字>/` 访问，无需改配置。
 
-## 备案期间
+## 备案
 
-国内服务器绑定域名需要 ICP 备案，审核期间用 IP 直连：`http://<公网IP>/`（Halo 后台 `http://<公网IP>/console`）。
-备案通过后域名自动可用，`Caddyfile` 末尾的 IP 段可以删掉。
+国内服务器绑定域名需要 ICP 备案，`cqian.top` 已备案（鄂ICP备2026055268号-1）。审核期间若需要 IP 直连，
+在 `Caddyfile` 末尾临时加一段 `http://{$SERVER_IP} { import kb_routes }` 即可，通过后删掉。
 
 ## 以后主域名要上新业务
 

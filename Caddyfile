@@ -3,7 +3,7 @@
 #   kb.{域名}      正式地址（canonical），知识库在这里提供服务
 #   {域名} / www   现在只做跳转；以后上新业务时改这一段即可，知识库不受影响
 #   *.{域名}       泛解析兜底，HTTP 层跳转到 kb（不签证书）
-# SITE_DOMAIN = 主域名，例如 cqian.top；SERVER_IP = 公网 IP（备案期间 / 调试用 IP 直连）
+# SITE_DOMAIN = 主域名，例如 cqian.top；SERVER_IP 已不再使用（备案已通过，IP 直连段已删）
 # 两者都来自 .env（setup.sh 自动生成）
 # ============================================================
 
@@ -59,10 +59,4 @@ kao.{$SITE_DOMAIN} {
 # ---- 其他任意子域名：HTTP 层兜底跳转（不签证书）----
 http://*.{$SITE_DOMAIN} {
 	redir https://kb.{$SITE_DOMAIN}{uri} permanent
-}
-
-# ---- 纯 IP 访问（备案审核期间 / 调试用，只走 HTTP，无证书）----
-# 备案通过、域名可用后可整段删除
-http://{$SERVER_IP} {
-	import kb_routes
 }

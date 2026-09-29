@@ -14,7 +14,7 @@
 | 系统 | Ubuntu 24.04，Docker + Docker Compose |
 | 登录 | `ssh root@<公网IP>`（IP 在本机 `.env` 的 `SERVER_IP`，也在 GitHub 组织 Secret `DEPLOY_HOST`） |
 | 安全组放行 | TCP 22 / 80 / 443（8091 仅在需要 IP 直连考试日历时临时放行） |
-| 域名 | `cqian.top`（阿里云注册，ICP 备案 2026-09 重新申请中） |
+| 域名 | `cqian.top`（阿里云注册，ICP 备案已通过：鄂ICP备2026055268号-1） |
 
 ## 服务清单
 
@@ -35,7 +35,6 @@
 | `kao.cqian.top` | 静态站 `/opt/exam-calendar/public`；`/api/*` → exam-calendar:8000 |
 | `cqian.top`、`www.cqian.top` | 301 → `kb.cqian.top`（主域名预留给未来业务） |
 | `*.cqian.top`（HTTP） | 301 → `kb.cqian.top` |
-| `http://<公网IP>` | 同 kb（备案期间临时，通过后删） |
 
 ### 定时 / 后台任务
 
@@ -83,7 +82,8 @@ Halo（JVM，限 768m）≈ 800m · PostgreSQL ≈ 100m · Caddy ≈ 30m · exam
 
 ## 已知待办（平台级）
 
-- [ ] 备案通过 → 删 Caddyfile 的 `http://{$SERVER_IP}` 段、删 `static/` 里的 how-to-live-better（内容已是 Halo 文章）
+- [x] 备案通过，Caddyfile 的 IP 直连段已删
+- [ ] 删 `static/` 里的 how-to-live-better（内容已是 Halo 文章）
 - [ ] 补 Halo 数据备份（cron + OSS）
 - [ ] exam-calendar 入 Git，接 Actions，去掉对 Mac 的依赖
 - [ ] 8091 端口若已放行，确认不再需要后关掉
