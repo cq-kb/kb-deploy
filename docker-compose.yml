@@ -53,3 +53,19 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./static:/srv/static:ro
       - ./data/caddy:/data
+      - ../exam-calendar/public:/srv/kao:ro
+
+  # 考试日历（代码在 /opt/exam-calendar，见 ~/Personal/exam-calendar）
+  exam-calendar:
+    build: ../exam-calendar
+    container_name: exam-calendar
+    restart: unless-stopped
+    ports:
+      - "8091:8000"            # IP 直连兜底：http://<公网IP>:8091（需安全组放行）
+    volumes:
+      - ../exam-calendar/public:/srv/public
+      - ../exam-calendar/state:/srv/state
+      - ../exam-calendar/data/exams.yaml:/srv/data/exams.yaml:ro
+    env_file:
+      - ../exam-calendar/.env
+    mem_limit: 300m

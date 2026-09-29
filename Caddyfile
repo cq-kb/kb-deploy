@@ -42,6 +42,20 @@ kb.{$SITE_DOMAIN} {
 	redir https://kb.{$SITE_DOMAIN}{uri} permanent
 }
 
+# ---- 考试日历：kao.{域名}（静态页 + /api 反代到 exam-calendar 容器）----
+kao.{$SITE_DOMAIN} {
+	encode zstd gzip
+	handle /api/* {
+		reverse_proxy exam-calendar:8000
+	}
+	handle {
+		root * /srv/kao
+		try_files {path} {path}/index.html
+		file_server
+	}
+	header Cache-Control "public, max-age=600"
+}
+
 # ---- 其他任意子域名：HTTP 层兜底跳转（不签证书）----
 http://*.{$SITE_DOMAIN} {
 	redir https://kb.{$SITE_DOMAIN}{uri} permanent

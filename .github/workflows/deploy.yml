@@ -26,8 +26,11 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          # printf 保证末尾有换行；tr 去掉粘贴时可能混入的 \r
+          printf '%s\n' "${{ secrets.DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          # 私钥格式自检：不合法就在这里明确失败，而不是等到 rsync 报一串看不懂的错
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null || { echo "::error::DEPLOY_KEY 不是合法的 OpenSSH 私钥，请重新粘贴（含 BEGIN/END 行）"; exit 1; }
           ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Sync config to server
