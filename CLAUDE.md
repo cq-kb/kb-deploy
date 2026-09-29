@@ -1,14 +1,22 @@
 # CLAUDE.md — kb-deploy 交接说明
 
-给接手这个项目的人或 AI 会话看的。README.md 讲"怎么部署"，这里讲"现在是什么状态、有什么坑、约定是什么"。
-状态会变，改完请更新本文件底部的「当前状态」。
+给接手这个项目的人或 AI 会话看的。三份文档分工：
+- **PLATFORM.md** — 服务器总地图：这台机器上跑着哪些服务、域名、端口、仓库、密钥在哪。**先看它。**
+- README.md — 本仓库怎么部署、怎么改配置
+- 本文件 — 当前状态、踩过的坑、约定
+状态会变，改完请更新本文件底部的「当前状态」和 PLATFORM.md。
 
 ## 一句话
 
 `kb.cqian.top` 是 cheng.qian 的个人知识库（Halo CMS），本仓库是它的服务器配置；主题在 `cq-kb/kb-theme`；
 内容（Markdown 源）在 `~/Personal/kb-content`（暂未建仓库）。
 
-## 三个仓库、一台服务器
+## 一台服务器、多个业务
+
+这台服务器不只跑知识库：`docker-compose.yml` 里还有 **exam-calendar**（考试日历，`kao.cqian.top`，代码在 `~/Personal/exam-calendar`，
+用它自己的 `deploy/deploy.sh` 从 Mac 直推）。改 compose / Caddyfile 时别动别人的段落；全貌见 PLATFORM.md。
+
+## 知识库相关的仓库
 
 | 东西 | 位置 | 说明 |
 |---|---|---|
