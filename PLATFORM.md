@@ -79,7 +79,7 @@ Halo（JVM，限 768m）≈ 800m · PostgreSQL ≈ 100m · Caddy ≈ 30m · Umam
 ## 新增一个服务的标准动作
 
 1. 代码入 `cq-kb/<name>` 仓库，带 Dockerfile
-2. `kb-deploy/docker-compose.yml` 加 service（`mem_limit` 必填，不暴露宿主端口除非必要）
+2. `kb-deploy/docker-compose.yml` 加 service（`mem_limit` 必填，不暴露宿主端口除非必要）；镜像用 Docker Hub 或国内源均可，部署时 Actions 会把服务器缺的镜像打包送过去
 3. `Caddyfile` 加子域名段，阿里云 DNS 加 A 记录
 4. 给该仓库加 Actions（复制 kb-theme 的 workflow 改路径），或先用 Mac 直推
 5. **更新本文件**的服务清单、域名表、定时任务表

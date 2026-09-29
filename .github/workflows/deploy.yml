@@ -20,6 +20,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SSH_TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,14 +43,28 @@ jobs:
             --exclude 'dev/' --exclude 'README.md' \
             ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/kb-deploy/"
 
+      # 服务器在国内，直接从 Docker Hub 拉镜像经常卡死（镜像加速器没缓存的层会一直 Downloading）。
+      # 所以缺的镜像由 Actions 这边拉好，打包通过 SSH 送过去；服务器上已有的镜像跳过。
+      - name: Ship missing images to server
+        run: |
+          for img in $(grep -E '^\s+image:' docker-compose.yml | awk '{print $2}'); do
+            if ssh "$SSH_TARGET" "docker image inspect '$img' >/dev/null 2>&1"; then
+              echo "已有：$img"; continue
+            fi
+            echo "::group::传送镜像 $img"
+            docker pull -q "$img"
+            docker save "$img" | gzip -1 | ssh "$SSH_TARGET" 'gunzip | docker load'
+            echo "::endgroup::"
+          done
+
       - name: Apply
         run: |
-          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" '
+          ssh "$SSH_TARGET" '
             set -e
             cd /opt/kb-deploy
-            docker compose up -d halodb
+            docker compose up -d --quiet-pull halodb
             bash scripts/ensure-umami-db.sh
-            docker compose up -d --remove-orphans
+            docker compose up -d --quiet-pull --remove-orphans
             docker compose restart caddy
             docker compose ps
           '
