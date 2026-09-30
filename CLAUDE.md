@@ -57,7 +57,7 @@ GitHub 组织 `cq-kb`（免费版）：两个仓库都是 **公开** 的，因�
 - Git 在 Cowork 的隔离环境里推不了 GitHub（无凭据），推送要在 Mac 自己的终端做
 - GitHub Actions 的 `DEPLOY_KEY` 必须是私钥**全文**，漏掉 BEGIN/END 行会报 `error in libcrypto`
 - Cowork 写不了 `.github/workflows/` 下的文件（受保护路径），要先写到别处再 `mv`
-- 服务器直接拉 Docker Hub 镜像会卡死（加速器没缓存的层一直 Downloading）：新镜像由 kb-deploy 的 Actions 在 runner 上 `docker pull` 后 `docker save | ssh docker load` 送过去，不要在服务器上手动 `docker pull` 国外镜像
+- 服务器直接拉 Docker Hub 镜像会卡死（加速器没缓存的层一直 Downloading）：新镜像由 kb-deploy 的 Actions 在 runner 上拉好、推到阿里云 ACR（深圳个人版，命名空间 cq-kb），服务器走内网从 ACR 拉回并 `docker tag` 成 compose 里的原名；不要在服务器上手动 `docker pull` 国外镜像。曾试过 `docker save | ssh docker load`，受服务器几 Mbps 入网带宽限制 20 分钟都传不完
 
 ## 约定
 

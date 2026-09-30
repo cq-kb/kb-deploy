@@ -64,6 +64,7 @@ GitHub 组织 `cq-kb`（免费版：组织级 Secrets 只对公开仓库生效�
 | 东西 | 位置 | 备注 |
 |---|---|---|
 | 服务器 root 密码 | 密码管理器 | 阿里云控制台可重置 |
+| 阿里云 ACR（镜像仓库，深圳个人版） | 公网 `crpi-oou1l52b2wmbdta8.cn-shenzhen.personal.cr.aliyuncs.com`，内网同名加 `-vpc`；命名空间 `cq-kb`（公开）；固定密码在密码管理器；GitHub 组织 Secrets `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | 服务器缺的镜像由 kb-deploy 的 Actions 推到这里、服务器走内网拉 |
 | GitHub Actions 部署私钥 | 服务器 `/root/.ssh/github_deploy`；GitHub 组织 Secret `DEPLOY_KEY` | 公钥在 `/root/.ssh/authorized_keys` |
 | `SITE_DOMAIN` / `SERVER_IP` / `DB_PASSWORD` / `UMAMI_APP_SECRET` | 服务器 `/opt/kb-deploy/.env` | setup.sh / ensure-umami-db.sh 生成，不进仓库 |
 | Umami 管理员 | 首次登录 `admin` / `umami`，**必须立即改密码**，新密码放密码管理器 | 忘记：进 `halodb` 的 `umami` 库改 `user` 表 |
@@ -79,7 +80,7 @@ Halo（JVM，限 768m）≈ 800m · PostgreSQL ≈ 100m · Caddy ≈ 30m · Umam
 ## 新增一个服务的标准动作
 
 1. 代码入 `cq-kb/<name>` 仓库，带 Dockerfile
-2. `kb-deploy/docker-compose.yml` 加 service（`mem_limit` 必填，不暴露宿主端口除非必要）；镜像用 Docker Hub 或国内源均可，部署时 Actions 会把服务器缺的镜像打包送过去
+2. `kb-deploy/docker-compose.yml` 加 service（`mem_limit` 必填，不暴露宿主端口除非必要）；镜像用 Docker Hub 或国内源均可，部署时 Actions 会把服务器缺的镜像经 ACR 中转（runner 推 ACR → 服务器内网拉）
 3. `Caddyfile` 加子域名段，阿里云 DNS 加 A 记录
 4. 给该仓库加 Actions（复制 kb-theme 的 workflow 改路径），或先用 Mac 直推
 5. **更新本文件**的服务清单、域名表、定时任务表
