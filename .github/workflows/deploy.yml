@@ -43,37 +43,47 @@ jobs:
             --exclude 'dev/' --exclude 'README.md' \
             ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/kb-deploy/"
 
-      # 服务器在国内，直接从 Docker Hub 拉镜像会卡死；通过 SSH 传又受服务器几 Mbps 入网带宽限制。
-      # 所以：缺的镜像由 runner 拉好，推到阿里云 ACR（深圳，个人版），服务器再走阿里云内网从 ACR 拉回来并打回原名。
-      # 需要组织 Secrets：ACR_REGISTRY（公网域名 crpi-xxx.cn-shenzhen.personal.cr.aliyuncs.com）、ACR_USERNAME、ACR_PASSWORD
-      # 命名空间 cq-kb 是私有的，runner 和服务器都会 docker login
-      - name: Ship missing images via ACR
-        env:
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-          ACR_NAMESPACE: cq-kb
+      # 镜像获取策略（主路径 + 兜底）：
+      #   1) 先让服务器自己 `docker compose pull`——服务器配了 registry-mirrors 镜像加速，走国内骨干网，几百 MB 一分钟左右；
+      #   2) 只有加速节点抽风、拉不下来的镜像，才由 runner 经阿里云 ACR 中转（runner→ACR 公网是跨境上传，很慢，所以只作兜底）。
+      # ACR 兜底需要组织 Secrets：ACR_REGISTRY（公网域名 crpi-xxx.cn-shenzhen.personal.cr.aliyuncs.com）、ACR_USERNAME、ACR_PASSWORD
+      - name: Pull images on server (mirror first)
+        id: pull
         run: |
           set -e
           missing=""
           for img in $(grep -E '^\s+image:' docker-compose.yml | awk '{print $2}'); do
             if ssh "$SSH_TARGET" "docker image inspect '$img' >/dev/null 2>&1"; then
-              echo "已有：$img"
+              echo "已有：$img"; continue
+            fi
+            echo "::group::服务器直接拉取 $img（镜像加速，超时 4 分钟）"
+            if ssh "$SSH_TARGET" "timeout 240 docker pull -q '$img'"; then
+              echo "拉取成功"
             else
+              echo "::warning::$img 直接拉取失败，转 ACR 兜底"
               missing="$missing $img"
             fi
+            echo "::endgroup::"
           done
-          [ -z "$missing" ] && { echo "服务器镜像齐全，跳过"; exit 0; }
+          echo "missing=$missing" >> "$GITHUB_OUTPUT"
 
+      - name: Ship still-missing images via ACR (fallback)
+        if: steps.pull.outputs.missing != ''
+        env:
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          ACR_NAMESPACE: cq-kb
+          MISSING: ${{ steps.pull.outputs.missing }}
+        run: |
+          set -e
           echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
           # 服务器走内网域名：crpi-xxx.cn-shenzhen... -> crpi-xxx-vpc.cn-shenzhen...
           ACR_VPC="$(echo "$ACR_REGISTRY" | sed -E 's/^([^.]+)\./\1-vpc./')"
-          # 仓库是私有的：让服务器也登录一次（凭据经 stdin 传过去，不落在命令行；docker 会存到 /root/.docker/config.json）
           echo "$ACR_PASSWORD" | ssh "$SSH_TARGET" "docker login '$ACR_VPC' -u '$ACR_USERNAME' --password-stdin"
-
-          for img in $missing; do
-            name="$(basename "${img%%:*}")"       # umamisoftware/umami:3.4.0 -> umami
-            tag="${img##*:}"                        # -> 3.4.0
+          for img in $MISSING; do
+            name="$(basename "${img%%:*}")"
+            tag="${img##*:}"
             acr="$ACR_REGISTRY/$ACR_NAMESPACE/$name:$tag"
             echo "::group::$img -> $acr"
             docker pull -q "$img"
