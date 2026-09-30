@@ -64,7 +64,7 @@ GitHub 组织 `cq-kb`（免费版：组织级 Secrets 只对公开仓库生效�
 | 东西 | 位置 | 备注 |
 |---|---|---|
 | 服务器 root 密码 | 密码管理器 | 阿里云控制台可重置 |
-| 阿里云 ACR（镜像仓库，深圳个人版） | 公网 `crpi-oou1l52b2wmbdta8.cn-shenzhen.personal.cr.aliyuncs.com`，内网同名加 `-vpc`；命名空间 `cq-kb`（公开）；固定密码在密码管理器；GitHub 组织 Secrets `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | 服务器缺的镜像由 kb-deploy 的 Actions 推到这里、服务器走内网拉 |
+| 阿里云 ACR（镜像仓库，深圳个人版） | 公网 `crpi-oou1l52b2wmbdta8.cn-shenzhen.personal.cr.aliyuncs.com`，内网同名加 `-vpc`；命名空间 `cq-kb`（私有）；固定密码在密码管理器；服务器上 `/root/.docker/config.json` 存有登录态（部署时自动 login）；GitHub 组织 Secrets `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | 服务器缺的镜像由 kb-deploy 的 Actions 推到这里、服务器走内网拉 |
 | GitHub Actions 部署私钥 | 服务器 `/root/.ssh/github_deploy`；GitHub 组织 Secret `DEPLOY_KEY` | 公钥在 `/root/.ssh/authorized_keys` |
 | `SITE_DOMAIN` / `SERVER_IP` / `DB_PASSWORD` / `UMAMI_APP_SECRET` | 服务器 `/opt/kb-deploy/.env` | setup.sh / ensure-umami-db.sh 生成，不进仓库 |
 | Umami 管理员 | 首次登录 `admin` / `umami`，**必须立即改密码**，新密码放密码管理器 | 忘记：进 `halodb` 的 `umami` 库改 `user` 表 |

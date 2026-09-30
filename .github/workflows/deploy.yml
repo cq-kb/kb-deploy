@@ -46,6 +46,7 @@ jobs:
       # 服务器在国内，直接从 Docker Hub 拉镜像会卡死；通过 SSH 传又受服务器几 Mbps 入网带宽限制。
       # 所以：缺的镜像由 runner 拉好，推到阿里云 ACR（深圳，个人版），服务器再走阿里云内网从 ACR 拉回来并打回原名。
       # 需要组织 Secrets：ACR_REGISTRY（公网域名 crpi-xxx.cn-shenzhen.personal.cr.aliyuncs.com）、ACR_USERNAME、ACR_PASSWORD
+      # 命名空间 cq-kb 是私有的，runner 和服务器都会 docker login
       - name: Ship missing images via ACR
         env:
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
@@ -67,6 +68,8 @@ jobs:
           echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
           # 服务器走内网域名：crpi-xxx.cn-shenzhen... -> crpi-xxx-vpc.cn-shenzhen...
           ACR_VPC="$(echo "$ACR_REGISTRY" | sed -E 's/^([^.]+)\./\1-vpc./')"
+          # 仓库是私有的：让服务器也登录一次（凭据经 stdin 传过去，不落在命令行；docker 会存到 /root/.docker/config.json）
+          echo "$ACR_PASSWORD" | ssh "$SSH_TARGET" "docker login '$ACR_VPC' -u '$ACR_USERNAME' --password-stdin"
 
           for img in $missing; do
             name="$(basename "${img%%:*}")"       # umamisoftware/umami:3.4.0 -> umami
