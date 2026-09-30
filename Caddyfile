@@ -62,7 +62,16 @@ stats.{$SITE_DOMAIN} {
 	reverse_proxy umami:3000
 }
 
+# ---- 已上线子域名的 HTTP 入口：跳到各自的 HTTPS ----
+# 注意：下面的 http://*.{域名} 通配块一旦存在，Caddy 就不再为这些子域名自动做 HTTP→HTTPS 跳转，
+# 用户在地址栏直接输 kao.cqian.top（浏览器先走 http）会被通配块 301 到 kb。
+# 所以每上线一个子域名，都要在这里加一行，让它跳回自己的 https。
+http://kao.{$SITE_DOMAIN}, http://stats.{$SITE_DOMAIN} {
+	redir https://{host}{uri} permanent
+}
+
 # ---- 其他任意子域名：HTTP 层兜底跳转（不签证书）----
+# 用 temporary（302）而不是 permanent：避免浏览器把「未来某个新子域名 → kb」的跳转永久缓存住
 http://*.{$SITE_DOMAIN} {
-	redir https://kb.{$SITE_DOMAIN}{uri} permanent
+	redir https://kb.{$SITE_DOMAIN}{uri} temporary
 }
