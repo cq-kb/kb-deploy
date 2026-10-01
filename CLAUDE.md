@@ -80,4 +80,6 @@ GitHub 组织 `cq-kb`（免费版）：两个仓库都是 **公开** 的，因�
 - [x] 备案通过，Caddyfile 的 IP 段已删
 - [ ] 后台 → 主题 → KB 设置 → 备案，填 ICP 号 `鄂ICP备2026055268号-1`（主题页脚会显示并链到 beian.miit.gov.cn）
 - [ ] 删 `static/` 的 how-to-live-better（内容已是文章，确认无外链依赖后删）
-- [ ] 主题下一步：首页改分类导航、分类页统计条、VIP 锁标识、页脚备案号
+- [x] 主题：首页分类导航、单条模式、纠错按钮（kb-theme 0addae4）
+- [ ] 导入 `kb-content/how-to-live-better-entries/` 612 条单条文章；后台把 33 个章分类挂到父分类并填描述
+- [ ] 发展路线见 Claude 项目 personal-ecs-dev 的「kb-发展路线」文档
