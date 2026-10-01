@@ -23,7 +23,7 @@
 | 服务器 | 阿里云 ECS，公网 IP 见 `.env`（服务器上 `/opt/kb-deploy/.env`） | Ubuntu 24.04，2C2G + 2G swap，root 登录 |
 | 本仓库 | `github.com/cq-kb/kb-deploy` ↔ `~/Personal/kb-deploy` ↔ 服务器 `/opt/kb-deploy` | Caddy + Halo + PostgreSQL 的 compose 配置 |
 | 主题 | `github.com/cq-kb/kb-theme` ↔ `~/Personal/kb-theme` ↔ 服务器 `/opt/kb-deploy/data/halo2/themes/kb-theme` | fork 自 halo-dev/theme-earth |
-| 内容 | `github.com/cq-kb/kb-content`（私有）↔ `~/Personal/kb-content/how-to-live-better/`（39 篇 md，带 frontmatter） | 用 Halo「站点迁移」插件导入 |
+| 内容 | `github.com/cq-kb/kb-content`（私有）↔ `~/Personal/kb-content/` | `how-to-live-better-entries/` 612 条单条，push 后 Actions 经 Halo API 同步；整章文章已不在线上 |
 
 GitHub 组织 `cq-kb`（免费版）：两个仓库都是 **公开** 的，因为免费版组织级 Secrets 只对公开仓库生效。
 组织级 Secrets：`DEPLOY_HOST` / `DEPLOY_USER`(root) / `DEPLOY_KEY`(服务器 `/root/.ssh/github_deploy` 的私钥，完整含 BEGIN/END 行)。
@@ -45,7 +45,7 @@ GitHub 组织 `cq-kb`（免费版）：两个仓库都是 **公开** 的，因�
 
 - 版本：`registry.fit2cloud.com/halo/halo:2`，数据在 `data/halo2`（附件、主题、插件）+ `data/db`（PostgreSQL 16）
 - 管理员用户名 `chengqian`；密码只有哈希，忘了按 https://www.halo.run/archives/forgot-admin-password 改数据库重置
-- 后台 `/console`。已装/待装插件：站点迁移（Markdown 导入）、会员插件（付费，游客/VIP 分级）、文章加密
+- 后台 `/console`。内容由 kb-content 的同步脚本管理，**不要在后台手改单条文章**（下次同步会被覆盖）；站点迁移插件不再使用
 - 证书由 Caddy 自动管理，存放在 `data/caddy/caddy/certificates/`（注意多一层 caddy）
 
 ## 已知的坑（踩过的）

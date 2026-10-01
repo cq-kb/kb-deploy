@@ -56,7 +56,7 @@ GitHub 组织 `cq-kb`（免费版：组织级 Secrets 只对公开仓库生效�
 |---|---|---|---|
 | `cq-kb/kb-deploy` | 公开 | **本仓库**：服务器配置总入口（compose、Caddyfile、setup.sh）、本总地图 | push main → rsync 到 `/opt/kb-deploy` + 重启 caddy |
 | `cq-kb/kb-theme` | 公开 | Halo 主题（fork theme-earth） | push main → 测试、构建、rsync 到主题目录 + 重启 halo |
-| `cq-kb/kb-content` | 私有 | 知识库内容源（Markdown，含 how-to-live-better 39 篇） | 无；用 Halo「站点迁移」插件手动导入 |
+| `cq-kb/kb-content` | 私有 | 知识库内容源（33 章源 Markdown + 拆出的 612 条单条 + 推广素材） | push main → `sync_halo.py` 经 Halo API 增量同步到线上（Secrets `HALO_URL` / `HALO_TOKEN`） |
 | （待建）`exam-calendar` | — | 考试日历 | 目前 Mac 直推，建议入 Git + 接 Actions |
 
 ## 密钥与配置在哪
@@ -65,6 +65,7 @@ GitHub 组织 `cq-kb`（免费版：组织级 Secrets 只对公开仓库生效�
 |---|---|---|
 | 服务器 root 密码 | 密码管理器 | 阿里云控制台可重置 |
 | 阿里云 ACR（镜像仓库，深圳个人版） | 公网 `crpi-oou1l52b2wmbdta8.cn-shenzhen.personal.cr.aliyuncs.com`，内网同名加 `-vpc`；命名空间 `cq-kb`（私有）；固定密码在密码管理器；服务器上 `/root/.docker/config.json` 存有登录态（部署时自动 login）；GitHub 组织 Secrets `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | 服务器缺的镜像由 kb-deploy 的 Actions 推到这里、服务器走内网拉 |
+| Halo 个人令牌（内容同步用） | 后台 → 个人中心 → 个人令牌；GitHub 组织 Secret `HALO_TOKEN` | 只给文章/分类/标签权限，泄露即吊销重建 |
 | GitHub Actions 部署私钥 | 服务器 `/root/.ssh/github_deploy`；GitHub 组织 Secret `DEPLOY_KEY` | 公钥在 `/root/.ssh/authorized_keys` |
 | `SITE_DOMAIN` / `SERVER_IP` / `DB_PASSWORD` / `UMAMI_APP_SECRET` | 服务器 `/opt/kb-deploy/.env` | setup.sh / ensure-umami-db.sh 生成，不进仓库 |
 | Umami 管理员 | 首次登录 `admin` / `umami`，**必须立即改密码**，新密码放密码管理器 | 忘记：进 `halodb` 的 `umami` 库改 `user` 表 |
