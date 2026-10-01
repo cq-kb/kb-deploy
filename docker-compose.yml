@@ -9,13 +9,16 @@ services:
     volumes:
       - ./data/halo2:/root/.halo2
     environment:
-      - JVM_OPTS=-Xmx768m -Xms256m
+      # 2C2G 机器内存预算（2026-10-01 假死事故后定）：堆 512m + 元空间 192m，容器硬上限 900m
+      # 串行 GC 在 2 核小堆下比默认 G1 省一两百兆常驻内存，流量小时吞吐差异感知不到
+      - JVM_OPTS=-Xmx512m -Xms128m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC
     command:
       - --spring.r2dbc.url=r2dbc:pool:postgresql://halodb/halo
       - --spring.r2dbc.username=halo
       - --spring.r2dbc.password=${DB_PASSWORD}
       - --spring.sql.init.platform=postgresql
       - --halo.external-url=https://kb.${SITE_DOMAIN}/
+    mem_limit: 900m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health/readiness"]
       interval: 30s
@@ -33,6 +36,9 @@ services:
       - POSTGRES_USER=halo
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=halo
+    # 小内存机器：压低 PG 缓冲区（给 halo 和 umami 两个库用，默认 128MB 太多）
+    command: postgres -c shared_buffers=32MB -c work_mem=2MB -c maintenance_work_mem=32MB -c max_connections=50
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "halo"]
       interval: 10s
@@ -54,6 +60,7 @@ services:
       - ./static:/srv/static:ro
       - ./data/caddy:/data
       - ../exam-calendar/public:/srv/kao:ro
+    mem_limit: 96m
 
   # 访问统计（Umami，自托管）：https://stats.<域名>
   # 复用 halodb，库名 umami（scripts/ensure-umami-db.sh 会在部署时自动创建）
@@ -71,6 +78,8 @@ services:
       # 统计脚本改名为 /kb.js、上报接口改为 /api/kb，减少被广告拦截插件拦掉的概率
       - TRACKER_SCRIPT_NAME=kb
       - COLLECT_API_ENDPOINT=/api/kb
+      # Node 堆上限设在容器上限之下：到顶时先 GC，而不是被 cgroup OOM 杀掉重启（重启期间会丢统计）
+      - NODE_OPTIONS=--max-old-space-size=224
     mem_limit: 350m
 
   # 考试日历（代码在 /opt/exam-calendar，见 ~/Personal/exam-calendar）
@@ -86,4 +95,4 @@ services:
       - ../exam-calendar/data/exams.yaml:/srv/data/exams.yaml:ro
     env_file:
       - ../exam-calendar/.env
-    mem_limit: 300m
+    mem_limit: 200m   # 实测常驻 ~80m
