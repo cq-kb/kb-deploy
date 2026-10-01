@@ -78,9 +78,11 @@ services:
       # 统计脚本改名为 /kb.js、上报接口改为 /api/kb，减少被广告拦截插件拦掉的概率
       - TRACKER_SCRIPT_NAME=kb
       - COLLECT_API_ENDPOINT=/api/kb
-      # Node 堆上限设在容器上限之下：到顶时先 GC，而不是被 cgroup OOM 杀掉重启（重启期间会丢统计）
-      - NODE_OPTIONS=--max-old-space-size=224
-    mem_limit: 350m
+    # 2026-10-01 实测：空闲 ~150m，第一条上报时冷初始化（加载 GeoLite2 地理库 + Prisma + 路由代码）一次性 +180m，
+    # 之后稳定在 ~310m。350m 装不下这一跳 → 容器内缓存抖动 → 读盘打满拖垮整机。500m 是测出来的安全值。
+    # memswap_limit 让它能用到 swap（需宿主机 vm.swappiness>0，阿里云镜像 /etc/sysctl.conf 默认写死 0，已改 100）
+    mem_limit: 500m
+    memswap_limit: 1g
 
   # 考试日历（代码在 /opt/exam-calendar，见 ~/Personal/exam-calendar）
   exam-calendar:
